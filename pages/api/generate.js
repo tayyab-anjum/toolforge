@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         'X-Title': 'ToolForge AI',
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct:free',
+        model: 'openrouter/auto',
         messages: [{ role: 'user', content: promptFn(fields) }],
         max_tokens: 800,
         temperature: 0.8,
