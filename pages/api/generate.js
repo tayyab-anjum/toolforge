@@ -27,26 +27,30 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'You have used all your credits. Please upgrade your plan.' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'AI service not configured. Contact support.' });
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptFn(fields) }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
-        }),
-      }
-    );
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL,
+        'X-Title': 'ToolForge AI',
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        messages: [{ role: 'user', content: promptFn(fields) }],
+        max_tokens: 800,
+        temperature: 0.8,
+      }),
+    });
 
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = data.choices?.[0]?.message?.content;
     if (!text) return res.status(500).json({ error: 'No response from AI. Please try again.' });
 
     await user.updateOne({ $inc: { creditsUsed: 1 } });
